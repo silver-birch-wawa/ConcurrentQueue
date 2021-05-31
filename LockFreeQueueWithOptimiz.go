@@ -52,18 +52,19 @@ func (q *Queue)Dequeue()(*Node) {
         tail := (*Node)(atomic.LoadPointer(((*unsafe.Pointer)(unsafe.Pointer(&q.tail)))))
         next := (*Node)(atomic.LoadPointer(((*unsafe.Pointer)(unsafe.Pointer(&head.next)))))
         if head == (*Node)(atomic.LoadPointer(((*unsafe.Pointer)(unsafe.Pointer(&q.head))))) { // are head, tail, and next consistent?
-            if head == tail { // is queue empty or tail falling behind?
-                if next == nil { // is queue empty?
+            if head == tail { 
+		// queue empty or tail falling behind
+                if next == nil { 
+		    // queue empty
                     return nil
                 }
-                // tail is falling behind.  try to advance it
+                // tail falling behind
                 // cas(&q.tail, tail, next)
 				atomic.CompareAndSwapPointer(((*unsafe.Pointer)(unsafe.Pointer(&q.tail))), unsafe.Pointer(tail),unsafe.Pointer(next))
             } else {
-                // read value before CAS otherwise another dequeue might free the next node
                 // if cas(&q.head, head, next) {
 				if atomic.CompareAndSwapPointer(((*unsafe.Pointer)(unsafe.Pointer(&q.head))), unsafe.Pointer(head),unsafe.Pointer(next)){
-                    return next // Dequeue is done.  return
+                    return next
                 }
             }
         }
